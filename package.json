@@ -1,8 +1,9 @@
 {
   "name": "snecs",
   "version": "1.0.0",
-  "description": "",
-  "module": "src/index.ts",
+  "description": "Snecs Node ECS",
+  "module": "build/index.js",
+  "types": "build/index.d.ts",
   "type": "module",
   "scripts": {
     "test": "ava",
@@ -11,6 +12,7 @@
     "fmt": "prettier . --write",
     "lint": "eslint src --max-warnings 0",
     "prepare": "tsc",
+    "prepublish": "tsc",
     "build": "tsc"
   },
   "author": "Cameron Eldridge",
