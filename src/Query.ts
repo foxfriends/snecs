@@ -52,7 +52,7 @@ export type QueryElementResult<Q> = Q extends ComponentConstructor<infer C>
         world: WorldView,
       ) => infer R | undefined;
     }
-  ? R
+  ? Exclude<R, undefined>
   : Q extends { optional: true; query: infer Q2 }
   ? QueryElementResult<Q2> | undefined
   : Q extends typeof ENTITY
