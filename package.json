@@ -3,8 +3,8 @@
   "version": "1.0.3",
   "description": "Snecs Node ECS",
   "module": "build/index.js",
+  "main": "build/index.js",
   "types": "build/index.d.ts",
-  "type": "module",
   "scripts": {
     "test": "ava",
     "pretest": "tsc",
