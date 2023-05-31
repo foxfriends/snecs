@@ -1,5 +1,5 @@
 import type { System } from "./System.js";
-import type { World } from "./World.js";
+import type { WorldView } from "./WorldView.js";
 
 export class Dispatcher {
   #systems: System[] = [];
@@ -9,7 +9,7 @@ export class Dispatcher {
     return this;
   }
 
-  run(world: World) {
+  run(world: WorldView) {
     this.#systems.forEach((system) => system(world));
   }
 }
