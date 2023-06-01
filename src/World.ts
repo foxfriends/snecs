@@ -16,6 +16,10 @@ import { EntityBuilder } from "./EntityBuilder.js";
 import { QueryResults } from "./QueryResults.js";
 import type { WorldView } from "./WorldView.js";
 
+export class UnknownComponentError extends Error {}
+
+export class UnknownResourceError extends Error {}
+
 export type WorldSnapshot = {
   resources: Record<string, unknown>;
   entities: Record<Entity, Record<string, unknown>>;
@@ -84,7 +88,7 @@ export class World implements WorldView {
   addComponent<T extends Component>(entity: Entity, component: T) {
     const storage = this.#components.get(component.constructor);
     if (!storage) {
-      throw new TypeError(
+      throw new UnknownComponentError(
         `Attempted use of non-registered component ${component.constructor.name}`,
       );
     }
@@ -97,7 +101,7 @@ export class World implements WorldView {
   ): T | undefined {
     const storage = this.#components.get(component);
     if (!storage) {
-      throw new TypeError(
+      throw new UnknownComponentError(
         `Attempted use of non-registered component ${component.name}`,
       );
     }
@@ -107,7 +111,7 @@ export class World implements WorldView {
   removeComponent<T>(entity: Entity, component: ComponentConstructor<T>) {
     const storage = this.#components.get(component);
     if (!storage) {
-      throw new TypeError(
+      throw new UnknownComponentError(
         `Attempted use of non-registered component ${component.name}`,
       );
     }
@@ -119,7 +123,7 @@ export class World implements WorldView {
   ): ComponentStorage<T> {
     const storage = this.#components.get(componentClass);
     if (!storage) {
-      throw new TypeError(
+      throw new UnknownComponentError(
         `Attempted use of non-registered component ${componentClass.name}`,
       );
     }
@@ -229,7 +233,7 @@ export class World implements WorldView {
         (resourceClass) => resourceClass.name === resourceName,
       );
       if (!resourceClass) {
-        throw new TypeError(`Resource ${resourceName} not known`);
+        throw new UnknownResourceError(`Resource ${resourceName} not known`);
       }
       this.#resources.set(
         resourceClass,
@@ -255,7 +259,9 @@ export class World implements WorldView {
           (componentClass) => componentClass.name === componentName,
         );
         if (!componentClass) {
-          throw new TypeError(`Component ${componentName} not registered`);
+          throw new UnknownComponentError(
+            `Component ${componentName} not registered`,
+          );
         }
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.#components

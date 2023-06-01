@@ -24,5 +24,10 @@ export {
   type ResourceConstructor,
 } from "./Resource.js";
 export { type System } from "./System.js";
-export { World, type WorldSnapshot } from "./World.js";
+export {
+  World,
+  UnknownComponentError,
+  UnknownResourceError,
+  type WorldSnapshot,
+} from "./World.js";
 export { type WorldView } from "./WorldView.js";
