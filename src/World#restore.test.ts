@@ -1,6 +1,6 @@
 import test from "ava";
 import { World } from "./World.js";
-import { ENTITY } from "./Query.js";
+import { ENTITY, OPTIONAL } from "./Query.js";
 import { ComponentConstructor } from "./Component.js";
 
 class A {
@@ -65,4 +65,43 @@ test("correctly handles skipped entity IDs", (t) => {
     },
   });
   t.deepEqual([...world.find(ENTITY)], [[1], [4]]);
+});
+
+class Special {
+  static rehydrate(data: unknown) {
+    if (
+      data &&
+      typeof data === "object" &&
+      "a" in data &&
+      typeof data.a === "number"
+    ) {
+      return new Special(data.a);
+    } else {
+      return undefined;
+    }
+  }
+
+  constructor(public b: number) {}
+}
+
+test("restores components with specialized rehydrate functions", (t) => {
+  const world = make().registerComponent(Special);
+  world.restore({
+    resources: {},
+    entities: {
+      1: { Special: { a: 1 } },
+    },
+  });
+  t.deepEqual([...world.find(ENTITY, Special)], [[1, new Special(1)]]);
+});
+
+test("skips components rejected by the rehydrator", (t) => {
+  const world = make().registerComponent(Special);
+  world.restore({
+    resources: {},
+    entities: {
+      1: { Special: { b: 1 } },
+    },
+  });
+  t.deepEqual([...world.find(ENTITY, OPTIONAL(Special))], [[1, undefined]]);
 });

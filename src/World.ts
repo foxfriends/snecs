@@ -263,16 +263,13 @@ export class World implements WorldView {
             `Component ${componentName} not registered`,
           );
         }
+
+        const rehydrated = componentClass.rehydrate
+          ? componentClass.rehydrate(component)
+          : Object.assign(Object.create(componentClass.prototype), component);
+        if (!rehydrated) continue;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.#components
-          .get(componentClass)!
-          .set(
-            entity,
-            Object.assign(
-              Object.create(componentClass.prototype as object),
-              component,
-            ),
-          );
+        this.#components.get(rehydrated.constructor)!.set(entity, rehydrated);
       }
     }
   }
