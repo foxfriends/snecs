@@ -18,16 +18,7 @@ export {
   type QueryResult,
 } from "./Query.js";
 export { type QueryResults } from "./QueryResults.js";
-export {
-  type ResourceClass,
-  type Resource,
-  type ResourceConstructor,
-} from "./Resource.js";
+export { type ResourceClass, type Resource, type ResourceConstructor } from "./Resource.js";
 export { type System } from "./System.js";
-export {
-  World,
-  UnknownComponentError,
-  UnknownResourceError,
-  type WorldSnapshot,
-} from "./World.js";
+export { World, UnknownComponentError, UnknownResourceError, type WorldSnapshot } from "./World.js";
 export { type WorldView } from "./WorldView.js";

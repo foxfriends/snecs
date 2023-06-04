@@ -11,15 +11,9 @@ export interface WorldView {
 
   with(entities: Entity[]): QueryResults<[typeof ENTITY]>;
   find<Q extends Query>(...query: Q): QueryResults<Q>;
-  query<Q extends Query>(
-    entity: Entity,
-    ...query: Q
-  ): QueryResult<Q> | undefined;
+  query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined;
 
-  getComponent<T>(
-    entity: Entity,
-    component: ComponentConstructor<T>,
-  ): T | undefined;
+  getComponent<T>(entity: Entity, component: ComponentConstructor<T>): T | undefined;
   addComponent<T extends Component>(entity: Entity, component: T): void;
   removeComponent<T>(entity: Entity, component: ComponentConstructor<T>): void;
 

@@ -7,11 +7,7 @@ import {
 import type { Entity } from "./Entity.js";
 import { ENTITY, Query, QueryResult } from "./Query.js";
 import type { System } from "./System.js";
-import type {
-  Resource,
-  ResourceClass,
-  ResourceConstructor,
-} from "./Resource.js";
+import type { Resource, ResourceClass, ResourceConstructor } from "./Resource.js";
 import { EntityBuilder } from "./EntityBuilder.js";
 import { QueryResults } from "./QueryResults.js";
 import type { WorldView } from "./WorldView.js";
@@ -95,10 +91,7 @@ export class World implements WorldView {
     storage.set(entity, component);
   }
 
-  getComponent<T>(
-    entity: Entity,
-    component: ComponentConstructor<T>,
-  ): T | undefined {
+  getComponent<T>(entity: Entity, component: ComponentConstructor<T>): T | undefined {
     const storage = this.#components.get(component);
     if (!storage) {
       throw new UnknownComponentError(
@@ -118,9 +111,7 @@ export class World implements WorldView {
     storage.delete(entity);
   }
 
-  private getStorage<T>(
-    componentClass: ComponentConstructor<T>,
-  ): ComponentStorage<T> {
+  private getStorage<T>(componentClass: ComponentConstructor<T>): ComponentStorage<T> {
     const storage = this.#components.get(componentClass);
     if (!storage) {
       throw new UnknownComponentError(
@@ -130,10 +121,7 @@ export class World implements WorldView {
     return storage as ComponentStorage<T>;
   }
 
-  query<Q extends Query>(
-    entity: Entity,
-    ...query: Q
-  ): QueryResult<Q> | undefined {
+  query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined {
     const result = [];
     for (const filter of query) {
       // It is invalid to not register first, let's just crash here.
@@ -237,10 +225,7 @@ export class World implements WorldView {
       }
       this.#resources.set(
         resourceClass,
-        Object.assign(
-          Object.create(resourceClass.prototype as object),
-          resource,
-        ) as unknown,
+        Object.assign(Object.create(resourceClass.prototype as object), resource) as unknown,
       );
     }
 
@@ -259,14 +244,15 @@ export class World implements WorldView {
           (componentClass) => componentClass.name === componentName,
         );
         if (!componentClass) {
-          throw new UnknownComponentError(
-            `Component ${componentName} not registered`,
-          );
+          throw new UnknownComponentError(`Component ${componentName} not registered`);
         }
 
         const rehydrated = componentClass.rehydrate
           ? componentClass.rehydrate(component)
-          : Object.assign(Object.create(componentClass.prototype), component);
+          : (Object.assign(
+              Object.create(componentClass.prototype as object),
+              component,
+            ) as Component);
         if (!rehydrated) continue;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.#components.get(rehydrated.constructor)!.set(entity, rehydrated);

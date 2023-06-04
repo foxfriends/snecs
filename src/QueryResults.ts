@@ -6,10 +6,7 @@ export class QueryResults<Q> implements Iterable<QueryResult<Q>> {
   #source: () => Iterable<[Entity, QueryResult<Q>]>;
   #world: WorldView;
 
-  constructor(
-    world: WorldView,
-    source: () => Iterable<[Entity, QueryResult<Q>]>,
-  ) {
+  constructor(world: WorldView, source: () => Iterable<[Entity, QueryResult<Q>]>) {
     this.#source = source;
     this.#world = world;
   }

@@ -47,10 +47,7 @@ export type QueryElementResult<Q> = Q extends ComponentConstructor<infer C>
   : Q extends {
       derived: true;
       query: Query;
-      combiner: (
-        query: QueryResult<unknown>,
-        world: WorldView,
-      ) => infer R | undefined;
+      combiner: (query: QueryResult<unknown>, world: WorldView) => infer R | undefined;
     }
   ? Exclude<R, undefined>
   : Q extends { optional: true; query: infer Q2 }

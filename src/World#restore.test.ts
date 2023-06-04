@@ -69,15 +69,8 @@ test("correctly handles skipped entity IDs", (t) => {
 
 class Special {
   static rehydrate(data: unknown) {
-    if (
-      data &&
-      typeof data === "object" &&
-      "a" in data &&
-      typeof data.a === "number"
-    ) {
+    if (data && typeof data === "object" && "a" in data && typeof data.a === "number") {
       return new Special(data.a);
-    } else {
-      return undefined;
     }
   }
 

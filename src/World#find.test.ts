@@ -53,10 +53,7 @@ test("queries for the entity ID with ENTITY", (t) => {
 test("queries for entities without a component with NOT", (t) => {
   const world = make();
   world.buildEntity().addComponent(new A()).addComponent(new B());
-  const bc = world
-    .buildEntity()
-    .addComponent(new B())
-    .addComponent(new C()).entity;
+  const bc = world.buildEntity().addComponent(new B()).addComponent(new C()).entity;
   world.buildEntity().addComponent(new C()).addComponent(new A());
   t.deepEqual([...world.find(ENTITY, NOT(A))], [[bc]]);
 });
@@ -65,10 +62,7 @@ test("queries for entities, including missing components with OPTIONAL", (t) => 
   const world = make();
   const aba = new A();
   const ab = world.buildEntity().addComponent(aba).addComponent(new B()).entity;
-  const bc = world
-    .buildEntity()
-    .addComponent(new B())
-    .addComponent(new C()).entity;
+  const bc = world.buildEntity().addComponent(new B()).addComponent(new C()).entity;
   world.buildEntity().addComponent(new C()).addComponent(new A());
 
   const results = [...world.find(ENTITY, B, OPTIONAL(A))];
