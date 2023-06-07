@@ -25,6 +25,12 @@ export class QueryResults<Q> implements Iterable<QueryResult<Q>> {
     return !next.done ? next.value?.[1] : undefined;
   }
 
+  count(): number {
+    let n = 0;
+    for (const _ of this.#source()) n += 1;
+    return n;
+  }
+
   select<Q2 extends Query>(...query: Q2): QueryResults<Q2> {
     const source = this.#source;
     const world = this.#world;
