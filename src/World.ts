@@ -5,7 +5,7 @@ import {
   ComponentClass,
 } from "./Component.js";
 import type { Entity } from "./Entity.js";
-import { ENTITY, Query, QueryResult } from "./Query.js";
+import { ENTITY, Query, QueryElement, QueryResult } from "./Query.js";
 import type { System } from "./System.js";
 import type { Resource, ResourceClass, ResourceConstructor } from "./Resource.js";
 import { EntityBuilder } from "./EntityBuilder.js";
@@ -131,16 +131,14 @@ export class World implements WorldView {
       }
 
       if ("not" in filter) {
-        const storage = this.getStorage(filter.query);
-        const component = storage.get(entity);
+        const component = this.query(entity, filter.query as QueryElement);
         if (component) return undefined;
         continue;
       }
 
       if ("optional" in filter) {
-        const storage = this.getStorage(filter.query);
-        const component = storage.get(entity);
-        result.push(component);
+        const component = this.query(entity, filter.query as QueryElement);
+        result.push(component?.[0]);
         continue;
       }
 

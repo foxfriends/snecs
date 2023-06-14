@@ -35,13 +35,13 @@ export function DERIVED<Q extends Query>(...query: Q) {
 export type QueryElement =
   | ComponentConstructor<unknown>
   | typeof ENTITY
-  | { optional: true; query: ComponentConstructor<unknown> }
+  | { optional: true; query: unknown }
   | {
       derived: true;
       query: Query;
       combiner: (query: QueryResult<unknown>, world: WorldView) => unknown;
     }
-  | { not: true; query: ComponentConstructor<unknown> };
+  | { not: true; query: unknown };
 export type QueryElementResult<Q> = Q extends ComponentConstructor<infer C>
   ? C
   : Q extends {
