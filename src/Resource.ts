@@ -1,5 +1,7 @@
 export interface ResourceClass extends Function {
   readonly serialize?: true;
+
+  rehydrate?(data: unknown): Resource;
 }
 
 export interface Resource {

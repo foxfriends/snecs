@@ -221,10 +221,11 @@ export class World implements WorldView {
       if (!resourceClass) {
         throw new UnknownResourceError(`Resource ${resourceName} not known`);
       }
-      this.#resources.set(
-        resourceClass,
-        Object.assign(Object.create(resourceClass.prototype as object), resource) as unknown,
-      );
+      const rehydrated = resourceClass.rehydrate
+        ? resourceClass.rehydrate(resource)
+        : (Object.assign(Object.create(resourceClass.prototype as object), resource) as Resource);
+      if (!rehydrated) continue;
+      this.#resources.set(resourceClass, rehydrated);
     }
 
     // Reset the components/entities.

@@ -67,10 +67,10 @@ test("correctly handles skipped entity IDs", (t) => {
   t.deepEqual([...world.find(ENTITY)], [[1], [4]]);
 });
 
-class Special {
+class SpecialComponent {
   static rehydrate(data: unknown) {
     if (data && typeof data === "object" && "a" in data && typeof data.a === "number") {
-      return new Special(data.a);
+      return new SpecialComponent(data.a);
     }
   }
 
@@ -78,23 +78,55 @@ class Special {
 }
 
 test("restores components with specialized rehydrate functions", (t) => {
-  const world = make().registerComponent(Special);
+  const world = make().registerComponent(SpecialComponent);
   world.restore({
     resources: {},
     entities: {
-      1: { Special: { a: 1 } },
+      1: { SpecialComponent: { a: 1 } },
     },
   });
-  t.deepEqual([...world.find(ENTITY, Special)], [[1, new Special(1)]]);
+  t.deepEqual([...world.find(ENTITY, SpecialComponent)], [[1, new SpecialComponent(1)]]);
 });
 
 test("skips components rejected by the rehydrator", (t) => {
-  const world = make().registerComponent(Special);
+  const world = make().registerComponent(SpecialComponent);
   world.restore({
     resources: {},
     entities: {
-      1: { Special: { b: 1 } },
+      1: { SpecialComponent: { b: 1 } },
     },
   });
-  t.deepEqual([...world.find(ENTITY, OPTIONAL(Special))], [[1, undefined]]);
+  t.deepEqual([...world.find(ENTITY, OPTIONAL(SpecialComponent))], [[1, undefined]]);
+});
+
+class SpecialResource {
+  static readonly serialize = true;
+
+  static rehydrate(data: unknown) {
+    if (data && typeof data === "object" && "a" in data && typeof data.a === "number") {
+      return new SpecialResource(data.a);
+    }
+  }
+
+  constructor(public b: number) {}
+}
+
+test("restores resources with specialized rehydrate functions", (t) => {
+  const world = make().registerResource(SpecialResource);
+  world.restore({
+    resources: {
+      SpecialResource: { a: 1 },
+    },
+    entities: {},
+  });
+  t.deepEqual(world.requireResource(SpecialResource), new SpecialResource(1));
+});
+
+test("skips resources rejected by the rehydrator", (t) => {
+  const world = make().registerResource(SpecialResource);
+  world.restore({
+    resources: { SpecialResource: { b: 1 } },
+    entities: {},
+  });
+  t.deepEqual(world.getResource(SpecialResource), undefined);
 });
