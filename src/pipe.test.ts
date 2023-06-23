@@ -9,15 +9,15 @@ test("connects systems in first-to-last order", (t) => {
   const spy2 = spy();
   const spy3 = spy();
   const system = pipe(
-    (world, next: Next<void>, context) => {
+    (_world, next: Next<void>, _context) => {
       spy1();
       next();
     },
-    (world, next: Next<void>, context) => {
+    (_world, next: Next<void>, _context) => {
       spy2();
       next();
     },
-    (world, next: Next<void>, context) => {
+    (_world, next: Next<void>, _context) => {
       spy3();
       next();
     },
@@ -32,15 +32,15 @@ test("connects systems in first-to-last order", (t) => {
 test("passes the context along to the next in chain", (t) => {
   t.plan(1);
   const system = pipe(
-    (world, next: Next<number>, context) => next(3),
-    (world, next, context) => t.is(context, 3),
+    (_world, next: Next<number>, _context) => next(3),
+    (_world, _next, context) => t.is(context, 3),
   ) as System;
   system(new World());
 });
 
 test("does not call the next in chain if `next` is not called", (t) => {
   const spy1 = spy();
-  const system = pipe((world, next, context) => {}, spy1) as System;
+  const system = pipe((_world, _next, _context) => {}, spy1) as System;
   system(new World());
   t.assert(spy1.notCalled);
 });
@@ -48,11 +48,11 @@ test("does not call the next in chain if `next` is not called", (t) => {
 test("allows calling the rest of the chain multiple times, with different context", (t) => {
   const spy1 = spy();
   const system = pipe(
-    (world, next: Next<number>, context) => {
+    (_world, next: Next<number>, _context) => {
       next(3);
       next(4);
     },
-    (world, next, context) => spy1(context),
+    (_world, _next, context) => void spy1(context),
   ) as System;
   system(new World());
   t.assert(spy1.calledWith(3));
@@ -65,10 +65,10 @@ test("works as a system in the dispatcher", (t) => {
     constructor(public expected: number) {}
   }
   const system = pipe(
-    (world, next, context) => {
+    (_world, next, _context) => {
       next(3);
     },
-    (world, next, context) => {
+    (world, _next, context) => {
       const { expected } = world.requireResource(Expected);
       t.is(context, expected);
     },

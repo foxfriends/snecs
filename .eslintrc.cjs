@@ -56,6 +56,7 @@ module.exports = {
     eqeqeq: "error",
     "@typescript-eslint/array-type": "error",
     "@typescript-eslint/require-await": "off",
+    "@typescript-eslint/no-empty-function": "off",
     "@typescript-eslint/naming-convention": [
       "error",
       {
@@ -67,6 +68,9 @@ module.exports = {
         format: ["StrictPascalCase"],
       },
     ],
-    "@typescript-eslint/no-unused-vars": ["warn", { varsIgnorePattern: "^_.*" }],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { varsIgnorePattern: "^_.*", argsIgnorePattern: "^_.*" },
+    ],
   },
 };
