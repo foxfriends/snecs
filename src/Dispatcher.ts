@@ -1,11 +1,12 @@
 import type { System } from "./System.js";
 import type { WorldView } from "./WorldView.js";
+import type { Middleware } from "./pipe.js";
 
 export class Dispatcher {
   #systems: System[] = [];
 
-  addSystem(system: System) {
-    this.#systems.push(system);
+  addSystem(system: System | Middleware<void, unknown>) {
+    this.#systems.push(system as System);
     return this;
   }
 

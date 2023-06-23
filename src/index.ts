@@ -22,3 +22,4 @@ export { type ResourceClass, type Resource, type ResourceConstructor } from "./R
 export { type System } from "./System.js";
 export { World, UnknownComponentError, UnknownResourceError, type WorldSnapshot } from "./World.js";
 export { type WorldView } from "./WorldView.js";
+export { pipe, type Middleware, type Next } from "./pipe.js";
