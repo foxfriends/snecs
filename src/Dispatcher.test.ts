@@ -7,8 +7,7 @@ import { WorldView } from "./WorldView";
 test("runs all systems in order", (t) => {
   const spy1 = spy();
   const spy2 = spy();
-  const world = new World();
-  new Dispatcher().addSystem(spy1).addSystem(spy2).run(world);
+  new Dispatcher().addSystem(spy1).addSystem(spy2).run(new World());
   t.assert(spy1.calledBefore(spy2));
 });
 
@@ -24,4 +23,18 @@ test("calls each system with a view of the world", (t) => {
       t.is(sentinel, value);
     })
     .run(world);
+});
+
+test("can be added to another dispatcher as a system", (t) => {
+  const spy1 = spy();
+  const subDispatcher = new Dispatcher().addSystem(spy1);
+  new Dispatcher().addSystem(subDispatcher.asSystem()).run(new World());
+  t.assert(spy1.calledOnce);
+});
+
+test("can be prepopulated with systems using of", (t) => {
+  const spy1 = spy();
+  const spy2 = spy();
+  Dispatcher.of(spy1, spy2).run(new World());
+  t.assert(spy1.calledBefore(spy2));
 });
