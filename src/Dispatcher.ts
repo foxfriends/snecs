@@ -3,7 +3,7 @@ import type { WorldView } from "./WorldView.js";
 import type { Middleware } from "./pipe.js";
 
 export class Dispatcher {
-  static of(...systems: System[]) {
+  static of(...systems: (System | Middleware<void, unknown>)[]) {
     return systems.reduce((dispatcher, system) => dispatcher.addSystem(system), new Dispatcher());
   }
 
