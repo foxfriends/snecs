@@ -14,10 +14,12 @@ export interface WorldView {
   query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined;
 
   getComponent<T>(entity: Entity, component: ComponentConstructor<T>): T | undefined;
+  requireComponent<T>(entity: Entity, component: ComponentConstructor<T>): T;
   addComponent<T extends Component>(entity: Entity, component: T): void;
   removeComponent<T>(entity: Entity, component: ComponentConstructor<T>): void;
 
   setResource<T extends Resource>(resource: T): void;
   getResource<T>(resource: ResourceConstructor<T>): T | undefined;
   requireResource<T>(resource: ResourceConstructor<T>): T;
+  removeResource<T>(resource: ResourceConstructor<T>): void;
 }

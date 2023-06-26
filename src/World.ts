@@ -30,7 +30,9 @@ export class World implements WorldView {
   #resources: Map<ResourceClass, unknown> = new Map();
 
   registerComponent<C extends Component>(component: C["constructor"]) {
-    this.#components.set(component, new ComponentStorage<C>());
+    if (!this.#components.has(component)) {
+      this.#components.set(component, new ComponentStorage<C>());
+    }
     return this;
   }
 
@@ -40,12 +42,14 @@ export class World implements WorldView {
   }
 
   registerResource<T>(resource: ResourceConstructor<T>) {
-    this.#resources.set(resource, undefined);
+    if (!this.#resources.has(resource)) {
+      this.#resources.set(resource, undefined);
+    }
     return this;
   }
 
-  removeResource<T extends Resource>(resource: T["constructor"]) {
-    this.#resources.delete(resource);
+  removeResource<T>(resource: ResourceConstructor<T>) {
+    this.#resources.set(resource, undefined);
   }
 
   getResource<T>(resource: ResourceConstructor<T>): T | undefined {
@@ -99,6 +103,14 @@ export class World implements WorldView {
       );
     }
     return storage.get(entity) as T;
+  }
+
+  requireComponent<T>(entity: Entity, component: ComponentConstructor<T>): T {
+    const found = this.getComponent(entity, component);
+    if (found === undefined) {
+      throw new TypeError(`Required component ${component.name} is not found for entity ${entity}`);
+    }
+    return found;
   }
 
   removeComponent<T>(entity: Entity, component: ComponentConstructor<T>) {
