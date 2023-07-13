@@ -1,8 +1,11 @@
 import type { Entity } from "./Entity.js";
 
 export interface ComponentClass extends Function {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new (...args: any): any;
   readonly skipSerialization?: true;
-  rehydrate?(data: unknown): Component;
+  rehydrate?(this: void, data: unknown): Component | undefined;
+  dehydrate?(this: void, data: InstanceType<this>): unknown;
 }
 
 export interface Component {

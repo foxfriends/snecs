@@ -37,7 +37,7 @@ export class World implements WorldView {
   #resources: Map<ResourceClass, unknown> = new Map();
 
   setResource<T extends Resource>(resource: T) {
-    this.#resources.set(resource.constructor, resource);
+    this.#resources.set(resource.constructor as ResourceClass, resource);
     return this;
   }
 
@@ -86,14 +86,14 @@ export class World implements WorldView {
   }
 
   registerComponent<C extends Component>(component: C["constructor"]) {
-    if (!this.#components.has(component)) {
-      this.#components.set(component, new ComponentStorage<C>());
+    if (!this.#components.has(component as ComponentClass)) {
+      this.#components.set(component as ComponentClass, new ComponentStorage<C>());
     }
     return this;
   }
 
   addComponent<T extends Component>(entity: Entity, component: T) {
-    const storage = this.#components.get(component.constructor);
+    const storage = this.#components.get(component.constructor as ComponentClass);
     if (!storage) {
       throw new UnknownComponentError(
         `Attempted use of non-registered component ${component.constructor.name}`,
@@ -219,17 +219,19 @@ export class World implements WorldView {
 
     for (const [componentClass, storage] of this.#components) {
       if (componentClass.skipSerialization) continue;
+      const dehydrate = componentClass.dehydrate ?? ((x: unknown) => x);
 
       for (const [entity, component] of storage) {
         const components = snapshot.entities[entity] ?? {};
-        components[componentClass.name] = structuredClone(component);
+        components[componentClass.name] = structuredClone(dehydrate(component));
         snapshot.entities[entity] = components;
       }
     }
 
     for (const [resourceClass, resource] of this.#resources) {
       if (!resourceClass.serialize) continue;
-      snapshot.resources[resourceClass.name] = structuredClone(resource);
+      const dehydrate = resourceClass.dehydrate ?? ((x: unknown) => x);
+      snapshot.resources[resourceClass.name] = structuredClone(dehydrate(resource));
     }
 
     return snapshot;
@@ -280,7 +282,7 @@ export class World implements WorldView {
             ) as Component);
         if (!rehydrated) continue;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.#components.get(rehydrated.constructor)!.set(entity, rehydrated);
+        this.#components.get(rehydrated.constructor as ComponentClass)!.set(entity, rehydrated);
       }
     }
   }

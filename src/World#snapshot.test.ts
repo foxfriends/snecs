@@ -39,6 +39,23 @@ test("includes all the serializable resources", (t) => {
   });
 });
 
+test("serializes resources according to their defined dehydrate function", (t) => {
+  class Serializable {
+    static readonly serialize = true;
+    static dehydrate(data: Serializable) {
+      return { ok: true, data };
+    }
+  }
+
+  const world = make().setResource(new Serializable());
+  t.deepEqual(world.snapshot(), {
+    resources: {
+      Serializable: { ok: true, data: {} },
+    },
+    entities: {},
+  });
+});
+
 test("skips non-serializable resources", (t) => {
   class Serializable {
     static readonly serialize = false;
@@ -62,6 +79,23 @@ test("skips non-serializable components", (t) => {
     resources: {},
     entities: {
       1: { A: {} },
+    },
+  });
+});
+
+test("serializes components according to their defined dehydrate function", (t) => {
+  class Serializable {
+    static dehydrate(component: Serializable) {
+      return { ok: true, component };
+    }
+  }
+
+  const world = make().registerComponent(Serializable);
+  world.buildEntity().addComponent(new Serializable());
+  t.deepEqual(world.snapshot(), {
+    resources: {},
+    entities: {
+      1: { Serializable: { ok: true, component: {} } },
     },
   });
 });

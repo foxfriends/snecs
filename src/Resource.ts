@@ -1,7 +1,9 @@
 export interface ResourceClass extends Function {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new (...args: any): any;
   readonly serialize?: true;
-
-  rehydrate?(data: unknown): Resource;
+  rehydrate?(this: void, data: unknown): Resource;
+  dehydrate?(this: void, data: InstanceType<this>): unknown;
 }
 
 export interface Resource {
