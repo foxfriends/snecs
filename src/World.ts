@@ -5,7 +5,14 @@ import {
   ComponentClass,
 } from "./Component.js";
 import type { Entity } from "./Entity.js";
-import { ENTITY, Query, QueryElement, QueryResult } from "./Query.js";
+import {
+  ENTITY,
+  ENTITY_BUILDER,
+  InfallibleQuery,
+  Query,
+  QueryElement,
+  QueryResult,
+} from "./Query.js";
 import type { System } from "./System.js";
 import type { Resource, ResourceClass, ResourceConstructor } from "./Resource.js";
 import { EntityBuilder } from "./EntityBuilder.js";
@@ -28,13 +35,6 @@ export class World implements WorldView {
   #components: Map<ComponentClass, ComponentStorage<unknown>> = new Map();
 
   #resources: Map<ResourceClass, unknown> = new Map();
-
-  registerComponent<C extends Component>(component: C["constructor"]) {
-    if (!this.#components.has(component)) {
-      this.#components.set(component, new ComponentStorage<C>());
-    }
-    return this;
-  }
 
   setResource<T extends Resource>(resource: T) {
     this.#resources.set(resource.constructor, resource);
@@ -85,6 +85,13 @@ export class World implements WorldView {
     delete this.#entities[entity];
   }
 
+  registerComponent<C extends Component>(component: C["constructor"]) {
+    if (!this.#components.has(component)) {
+      this.#components.set(component, new ComponentStorage<C>());
+    }
+    return this;
+  }
+
   addComponent<T extends Component>(entity: Entity, component: T) {
     const storage = this.#components.get(component.constructor);
     if (!storage) {
@@ -133,12 +140,19 @@ export class World implements WorldView {
     return storage as ComponentStorage<T>;
   }
 
+  query<Q extends InfallibleQuery>(entity: Entity, ...query: Q): QueryResult<Q>;
+  query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined;
   query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined {
     const result = [];
     for (const filter of query) {
       // It is invalid to not register first, let's just crash here.
       if (filter === ENTITY) {
         result.push(entity);
+        continue;
+      }
+
+      if (filter === ENTITY_BUILDER) {
+        result.push(new EntityBuilder(entity, this));
         continue;
       }
 

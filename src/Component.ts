@@ -2,7 +2,6 @@ import type { Entity } from "./Entity.js";
 
 export interface ComponentClass extends Function {
   readonly skipSerialization?: true;
-
   rehydrate?(data: unknown): Component;
 }
 
