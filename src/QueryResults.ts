@@ -48,4 +48,8 @@ export class QueryResults<Q> implements Iterable<QueryResult<Q>> {
       yield item;
     }
   }
+
+  collect() {
+    return Array.from(this);
+  }
 }
