@@ -32,13 +32,16 @@ export class PipedSystem<A, B> extends MiddlewareSystem<A, B> {
       .reduce((next: Next<unknown>, system: MiddlewareLike<unknown, unknown>) => {
         return (context: unknown) => {
           const name = system instanceof System ? system.constructor.name : system.name;
-          const trace = world.getResource(Tracer)?.start(name);
+          const tracer = world.getResource(Tracer);
+          const child = tracer?.child(name);
+          if (child) world.setResource(child);
           try {
             return typeof system === "function"
               ? system(world, next, context)
               : system.runAsMiddleware(world, next, context);
           } finally {
-            trace?.done();
+            child?.done();
+            if (tracer) world.setResource(tracer);
           }
         };
       }, next as Next<unknown>);
