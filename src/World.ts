@@ -18,7 +18,6 @@ import type { Resource, ResourceClass, ResourceConstructor } from "./Resource.js
 import { EntityBuilder } from "./EntityBuilder.js";
 import { QueryResults } from "./QueryResults.js";
 import type { WorldView } from "./WorldView.js";
-import { Tracer } from "./Tracer.js";
 
 export class UnknownComponentError extends Error {}
 
@@ -141,78 +140,49 @@ export class World implements WorldView {
     return storage as ComponentStorage<T>;
   }
 
-  private queryInner<Q extends InfallibleQuery>(entity: Entity, ...query: Q): QueryResult<Q>;
-  private queryInner<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined;
-  private queryInner<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined {
-    const tracer = this.getResource(Tracer);
-
-    const result = [];
-    for (const filter of query) {
-      const child = tracer?.child("query element");
-      if (child) this.setResource(child);
-      try {
-        // It is invalid to not register first, let's just crash here.
-        if (filter === ENTITY) {
-          if (child) child.name = "ENTITY";
-          result.push(entity);
-          continue;
-        }
-
-        if (filter === ENTITY_BUILDER) {
-          if (child) child.name = "ENTITY_BUILDER";
-          result.push(new EntityBuilder(entity, this));
-          continue;
-        }
-
-        if ("not" in filter) {
-          if (child) child.name = "NOT";
-          const component = this.queryInner(entity, filter.query as QueryElement);
-          if (component) return undefined;
-          continue;
-        }
-
-        if ("optional" in filter) {
-          if (child) child.name = "OPTIONAL";
-          const component = this.queryInner(entity, filter.query as QueryElement);
-          result.push(component?.[0]);
-          continue;
-        }
-
-        if ("derived" in filter) {
-          if (child) child.name = "DERIVED";
-          const queryResult = this.queryInner(entity, ...filter.query);
-          if (!queryResult) return undefined;
-          const derivedValue = filter.combiner(queryResult, this);
-          if (derivedValue === undefined) return undefined;
-          result.push(derivedValue);
-          continue;
-        }
-
-        const storage = this.getStorage(filter);
-        const component = storage.get(entity);
-        if (!component) return undefined;
-        result.push(component);
-      } finally {
-        child?.done();
-        if (tracer) this.setResource(tracer);
-      }
-    }
-
-    return result as QueryResult<Q>;
-  }
-
   query<Q extends InfallibleQuery>(entity: Entity, ...query: Q): QueryResult<Q>;
   query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined;
   query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined {
-    const tracer = this.getResource(Tracer);
-    const child = tracer?.child("query");
-    if (child) this.setResource(child);
-    try {
-      return this.queryInner(entity, ...query);
-    } finally {
-      child?.done();
-      if (tracer) this.setResource(tracer);
+    const result = [];
+    for (const filter of query) {
+      // It is invalid to not register first, let's just crash here.
+      if (filter === ENTITY) {
+        result.push(entity);
+        continue;
+      }
+
+      if (filter === ENTITY_BUILDER) {
+        result.push(new EntityBuilder(entity, this));
+        continue;
+      }
+
+      if ("not" in filter) {
+        const component = this.query(entity, filter.query as QueryElement);
+        if (component) return undefined;
+        continue;
+      }
+
+      if ("optional" in filter) {
+        const component = this.query(entity, filter.query as QueryElement);
+        result.push(component?.[0]);
+        continue;
+      }
+
+      if ("derived" in filter) {
+        const queryResult = this.query(entity, ...filter.query);
+        if (!queryResult) return undefined;
+        const derivedValue = filter.combiner(queryResult, this);
+        if (derivedValue === undefined) return undefined;
+        result.push(derivedValue);
+        continue;
+      }
+
+      const storage = this.getStorage(filter);
+      const component = storage.get(entity);
+      if (!component) return undefined;
+      result.push(component);
     }
+    return result as QueryResult<Q>;
   }
 
   find<Q extends Query>(...query: Q): QueryResults<Q> {
