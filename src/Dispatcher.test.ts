@@ -28,7 +28,7 @@ test("calls each system with a view of the world", (t) => {
 test("can be added to another dispatcher as a system", (t) => {
   const spy1 = spy();
   const subDispatcher = new Dispatcher().addSystem(spy1);
-  new Dispatcher().addSystem(subDispatcher.asSystem()).run(new World());
+  new Dispatcher().addSystem(subDispatcher).run(new World());
   t.assert(spy1.calledOnce);
 });
 

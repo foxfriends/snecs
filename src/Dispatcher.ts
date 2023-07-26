@@ -1,24 +1,38 @@
-import type { System } from "./System.js";
+import { System, SystemFunction } from "./System.js";
+import { Tracer } from "./Tracer.js";
 import type { WorldView } from "./WorldView.js";
-import type { Middleware } from "./pipe.js";
 
-export class Dispatcher {
-  static of(...systems: (System | Middleware<void, unknown>)[]) {
-    return systems.reduce((dispatcher, system) => dispatcher.addSystem(system), new Dispatcher());
+type SystemLike = SystemFunction | System;
+
+export class Dispatcher extends System {
+  static of(...systems: SystemLike[]) {
+    return systems.reduce(
+      (dispatcher: Dispatcher, system) => dispatcher.addSystem(system),
+      new Dispatcher(),
+    );
   }
 
-  #systems: System[] = [];
+  #systems: SystemLike[] = [];
+  #diagnostics: Map<SystemLike, bigint> = new Map();
 
-  addSystem(system: System | Middleware<void, unknown>) {
-    this.#systems.push(system as System);
+  addSystem(system: SystemLike) {
+    this.#systems.push(system);
     return this;
   }
 
   run(world: WorldView) {
-    this.#systems.forEach((system) => system(world));
-  }
-
-  asSystem(): System {
-    return (world: WorldView) => this.run(world);
+    this.#systems.forEach((system) => {
+      const name = system instanceof System ? system.constructor.name : system.name;
+      const trace = world.getResource(Tracer)?.start(name);
+      try {
+        if (system instanceof System) {
+          system.run(world);
+        } else {
+          system(world);
+        }
+      } finally {
+        trace?.done();
+      }
+    });
   }
 }

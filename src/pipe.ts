@@ -1,27 +1,63 @@
+import { System } from "./System";
+import { Tracer } from "./Tracer";
 import type { WorldView } from "./WorldView";
 
 export type Next<B> = (context: B) => void;
-export type Middleware<A, B> = (this: void, world: WorldView, next: Next<B>, context: A) => void;
+export type MiddlewareFunction<A, B> = (
+  this: void,
+  world: WorldView,
+  next: Next<B>,
+  context: A,
+) => void;
+
+type MiddlewareLike<A, B> = MiddlewareFunction<A, B> | MiddlewareSystem<A, B>;
+
+export abstract class MiddlewareSystem<A, B> extends System {
+  abstract runAsMiddleware(world: WorldView, next: Next<B>, context: A): void;
+}
+
+export class PipedSystem<A, B> extends MiddlewareSystem<A, B> {
+  constructor(public chain: MiddlewareLike<unknown, unknown>[]) {
+    super();
+  }
+
+  run(world: WorldView) {
+    // This function should only be called when A is undefined, so...
+    this.runAsMiddleware(world, () => {}, undefined as A);
+  }
+
+  runAsMiddleware(world: WorldView, next: Next<B>, context: A) {
+    const start = Array.from(this.chain)
+      .reverse()
+      .reduce((next: Next<unknown>, system: MiddlewareLike<unknown, unknown>) => {
+        return (context: unknown) => {
+          const name = system instanceof System ? system.constructor.name : system.name;
+          const trace = world.getResource(Tracer)?.start(name);
+          try {
+            return typeof system === "function"
+              ? system(world, next, context)
+              : system.runAsMiddleware(world, next, context);
+          } finally {
+            trace?.done();
+          }
+        };
+      }, next as Next<unknown>);
+    start(context);
+  }
+}
 
 export function pipe<A, B, C, D, E>(
-  a: Middleware<A, B>,
-  b: Middleware<B, C>,
-  c: Middleware<C, D>,
-  d: Middleware<D, E>,
-): Middleware<A, E>;
+  a: MiddlewareLike<A, B>,
+  b: MiddlewareLike<B, C>,
+  c: MiddlewareLike<C, D>,
+  d: MiddlewareLike<D, E>,
+): PipedSystem<A, E>;
 export function pipe<A, B, C, D>(
-  a: Middleware<A, B>,
-  b: Middleware<B, C>,
-  c: Middleware<C, D>,
-): Middleware<A, D>;
-export function pipe<A, B, C>(a: Middleware<A, B>, b: Middleware<B, C>): Middleware<A, C>;
-export function pipe(...chain: Middleware<unknown, unknown>[]) {
-  return (world: WorldView, next: Next<unknown> = () => {}, context: unknown = undefined) => {
-    const start = Array.from(chain)
-      .reverse()
-      .reduce((next: Next<unknown>, system: Middleware<unknown, unknown>) => {
-        return (context: unknown) => system(world, next, context);
-      }, next);
-    start(context);
-  };
+  a: MiddlewareLike<A, B>,
+  b: MiddlewareLike<B, C>,
+  c: MiddlewareLike<C, D>,
+): PipedSystem<A, D>;
+export function pipe<A, B, C>(a: MiddlewareLike<A, B>, b: MiddlewareLike<B, C>): PipedSystem<A, C>;
+export function pipe(...chain: MiddlewareLike<unknown, unknown>[]) {
+  return new PipedSystem(chain);
 }

@@ -23,7 +23,7 @@ test("connects systems in first-to-last order", (t) => {
     },
   ) as System;
 
-  system(new World());
+  system.run(new World());
 
   t.assert(spy1.calledBefore(spy2));
   t.assert(spy2.calledBefore(spy3));
@@ -35,13 +35,13 @@ test("passes the context along to the next in chain", (t) => {
     (_world, next: Next<number>, _context) => next(3),
     (_world, _next, context) => t.is(context, 3),
   ) as System;
-  system(new World());
+  system.run(new World());
 });
 
 test("does not call the next in chain if `next` is not called", (t) => {
   const spy1 = spy();
   const system = pipe((_world, _next, _context) => {}, spy1) as System;
-  system(new World());
+  system.run(new World());
   t.assert(spy1.notCalled);
 });
 
@@ -54,7 +54,7 @@ test("allows calling the rest of the chain multiple times, with different contex
     },
     (_world, _next, context) => void spy1(context),
   ) as System;
-  system(new World());
+  system.run(new World());
   t.assert(spy1.calledWith(3));
   t.assert(spy1.calledWith(4));
 });
