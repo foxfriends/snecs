@@ -47,6 +47,11 @@ export class PipedSystem<A, B> extends MiddlewareSystem<A, B> {
       }, next as Next<unknown>);
     start(context);
   }
+
+  displayAs(name: string) {
+    this.displayName = name;
+    return this;
+  }
 }
 
 export function pipe<A, B, C, D, E>(

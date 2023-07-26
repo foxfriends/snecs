@@ -38,4 +38,9 @@ export class Dispatcher extends System {
       }
     });
   }
+
+  displayAs(name: string) {
+    this.displayName = name;
+    return this;
+  }
 }
