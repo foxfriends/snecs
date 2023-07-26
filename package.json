@@ -1,6 +1,6 @@
 {
   "name": "snecs",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Snecs Node ECS",
   "main": "build/index.js",
   "types": "build/index.d.ts",
