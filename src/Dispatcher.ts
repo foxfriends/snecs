@@ -22,7 +22,8 @@ export class Dispatcher extends System {
 
   run(world: WorldView) {
     this.#systems.forEach((system) => {
-      const name = system instanceof System ? system.constructor.name : system.name;
+      const name =
+        system instanceof System ? system.displayName ?? system.constructor.name : system.name;
       const tracer = world.getResource(Tracer);
       const child = tracer?.child(name);
       if (child) world.setResource(child);

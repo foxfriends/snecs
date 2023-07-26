@@ -31,7 +31,8 @@ export class PipedSystem<A, B> extends MiddlewareSystem<A, B> {
       .reverse()
       .reduce((next: Next<unknown>, system: MiddlewareLike<unknown, unknown>) => {
         return (context: unknown) => {
-          const name = system instanceof System ? system.constructor.name : system.name;
+          const name =
+            system instanceof System ? system.displayName ?? system.constructor.name : system.name;
           const tracer = world.getResource(Tracer);
           const child = tracer?.child(name);
           if (child) world.setResource(child);
