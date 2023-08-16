@@ -14,6 +14,7 @@ export class EntityBuilder {
   }
 
   removeComponent<T extends Component>(component: T["constructor"]) {
-    return this.world.removeComponent(this.entity, component as ComponentConstructor<T>);
+    this.world.removeComponent(this.entity, component as ComponentConstructor<T>);
+    return this;
   }
 }
