@@ -9,6 +9,7 @@ export { type Entity } from "./Entity.js";
 export { EntityBuilder } from "./EntityBuilder.js";
 export {
   ENTITY,
+  ENTITY_BUILDER,
   DERIVED,
   NOT,
   OPTIONAL,
