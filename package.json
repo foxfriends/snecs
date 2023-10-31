@@ -17,8 +17,8 @@
   "author": "Cameron Eldridge",
   "license": "ISC",
   "engines": {
-    "node": "^18.16.0",
-    "npm": "^9.6.4"
+    "node": "^18 || ^20",
+    "npm": "^9 || ^10"
   },
   "ava": {
     "typescript": {
