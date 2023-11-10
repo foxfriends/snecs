@@ -20,6 +20,14 @@ export class QueryResults<Q> implements Iterable<QueryResult<Q>> {
     });
   }
 
+  chain<Q2 extends Query>(second: QueryResults<Q2>): QueryResults<Q | Q2> {
+    const source = this.#source;
+    return new QueryResults<Q | Q2>(this.#world, function* () {
+      yield* source();
+      yield* second.#source();
+    });
+  }
+
   first(): QueryResult<Q> | undefined {
     const next = this.#source()[Symbol.iterator]().next();
     return !next.done ? next.value?.[1] : undefined;
