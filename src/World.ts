@@ -15,28 +15,50 @@ import type { WorldView } from "./WorldView.js";
 import { EntityBuilder } from "./EntityBuilder.js";
 import { QueryResults } from "./QueryResults.js";
 
+/** An unknown component was accessed in the world */
 export class UnknownComponentError extends Error {}
 
+/** An unknown resource was accessed in the world */
 export class UnknownResourceError extends Error {}
 
+/**
+ * The structure of a snapshot of a world, which can be used to
+ * save and restore the state of a world beyond the lifetime of
+ * the program.
+ */
 export type WorldSnapshot = {
   resources: Record<string, unknown>;
   entities: Record<Entity, Record<string, unknown>>;
 };
 
+/**
+ * The World implements the EC of ECS, and acts as a container for all entities,
+ * components, and resources. On its own, the world is just a static pile of data.
+ *
+ * Systems act on the world, communicating by modifying the components and resources.
+ */
 export class World implements WorldView {
   #entities: (Entity | undefined)[] = [];
   #systems: System[] = [];
-
   #components: Map<ComponentClass, ComponentStorage<unknown>> = new Map();
-
   #resources: Map<ResourceClass, unknown> = new Map();
 
+  /**
+   * Sets a resource for this world. This will replace any existing resource
+   * of the same type.
+   *
+   * Resources set this way will automatically be registered.
+   */
   setResource<T extends Resource>(resource: T) {
     this.#resources.set(resource.constructor as ResourceClass, resource);
     return this;
   }
 
+  /**
+   * Registers a resource type for this world, without actually creating a
+   * resource of that type. Resources must be registered in order for them
+   * to be restored from a snapshot.
+   */
   registerResource<T>(resource: ResourceConstructor<T>) {
     if (!this.#resources.has(resource)) {
       this.#resources.set(resource, undefined);
@@ -44,14 +66,27 @@ export class World implements WorldView {
     return this;
   }
 
+  /**
+   * Removes a resource from the world. The resource type remains registered.
+   */
   removeResource<T>(resource: ResourceConstructor<T>) {
     this.#resources.set(resource, undefined);
   }
 
+  /**
+   * Gets the resource from the world by its resource type.
+   *
+   * Returns `undefined` if the resource is not set or not registered.
+   */
   getResource<T>(resource: ResourceConstructor<T>): T | undefined {
     return this.#resources.get(resource) as T | undefined;
   }
 
+  /**
+   * Gets the resource from the world by its resource type.
+   *
+   * @throws {TypeError} if the resource is not set.
+   */
   requireResource<T>(resource: ResourceConstructor<T>): T {
     const value = this.#resources.get(resource);
     if (value === undefined) {
@@ -60,20 +95,42 @@ export class World implements WorldView {
     return value as T;
   }
 
+  /**
+   * The list of entities currently existing in this world.
+   */
   entities(): Entity[] {
     return this.#entities.filter((n): n is number => n !== undefined);
   }
 
+  /**
+   * Creates a new entity in this world. The created entity has no
+   * components.
+   */
   createEntity(): Entity {
     const entity = Math.max(...this.entities(), 0) + 1;
     this.#entities[entity] = entity;
     return entity;
   }
 
+  /**
+   * Creates a new entity in this world. The created entity has no
+   * components.
+   *
+   * Returns an `EntityBuilder` by which components can be conveniently
+   * added to the entity.
+   */
   buildEntity(): EntityBuilder {
     return new EntityBuilder(this.createEntity(), this);
   }
 
+  /**
+   * Removes an entity and all its components from the world
+   *
+   * Note that this does not (cannot) recognize references to entities within
+   * other components. If there are components that refer to this entity by ID,
+   * it is recommended to explicitly delete those references yourself before
+   * destroying the entity.
+   */
   destroyEntity(entity: Entity) {
     for (const storage of this.#components.values()) {
       storage.delete(entity);
@@ -81,6 +138,12 @@ export class World implements WorldView {
     delete this.#entities[entity];
   }
 
+  /**
+   * Registers a new component type with this world.
+   *
+   * Components may not be used unless registered. Any attempt to use an unregistered
+   * component will result in errors being thrown.
+   */
   registerComponent<C extends Component>(component: C["constructor"]) {
     if (!this.#components.has(component as ComponentClass)) {
       this.#components.set(component as ComponentClass, new ComponentStorage<C>());
@@ -88,6 +151,11 @@ export class World implements WorldView {
     return this;
   }
 
+  /**
+   * Adds a component for an entity.
+   *
+   * @throws {UnknownComponentError} if the component type is not registered
+   */
   addComponent<T extends Component>(entity: Entity, component: T) {
     const storage = this.#components.get(component.constructor as ComponentClass);
     if (!storage) {
@@ -98,6 +166,28 @@ export class World implements WorldView {
     storage.set(entity, component);
   }
 
+  /**
+   * Removes components of the given type from all entities.
+   *
+   * @throws {UnknownComponentError} if the component type is not registered
+   */
+  clearComponent<T extends Component>(component: T) {
+    const storage = this.#components.get(component.constructor as ComponentClass);
+    if (!storage) {
+      throw new UnknownComponentError(
+        `Attempted to clear non-registered component ${component.constructor.name}`,
+      );
+    }
+    storage.clear();
+  }
+
+  /**
+   * Retrieves the component of the given type from an entity.
+   *
+   * Returns `undefined` if the entity does not have this component.
+   *
+   * @throws {UnknownComponentError} if the component type is not registered
+   */
   getComponent<T>(entity: Entity, component: ComponentConstructor<T>): T | undefined {
     const storage = this.#components.get(component);
     if (!storage) {
@@ -108,6 +198,12 @@ export class World implements WorldView {
     return storage.get(entity) as T;
   }
 
+  /**
+   * Retrieves the component of the given type from an entity.
+   *
+   * @throws {TypeError} if the entity does not have this component
+   * @throws {UnknownComponentError} if the component type is not registered
+   */
   requireComponent<T>(entity: Entity, component: ComponentConstructor<T>): T {
     const found = this.getComponent(entity, component);
     if (found === undefined) {
@@ -116,6 +212,11 @@ export class World implements WorldView {
     return found;
   }
 
+  /**
+   * Removes the component of the given type from an entity.
+   *
+   * @throws {UnknownComponentError} if the component type is not registered
+   */
   removeComponent<T>(entity: Entity, component: ComponentConstructor<T>) {
     const storage = this.#components.get(component);
     if (!storage) {
@@ -136,6 +237,17 @@ export class World implements WorldView {
     return storage as ComponentStorage<T>;
   }
 
+  /**
+   * Look up a query for an entity, as a bundle.
+   *
+   * Returns the entire located bundle, or undefined if any of the pieces of the
+   * query were not found.
+   *
+   * If some pieces of the bundle are expected to be optional, use the `OPTIONAL`
+   * modifier.
+   *
+   * @throws {UnknownComponentError} if any component queried is not registered.
+   */
   query<Q extends InfallibleQuery>(entity: Entity, ...query: Q): QueryResult<Q>;
   query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined;
   query<Q extends Query>(entity: Entity, ...query: Q): QueryResult<Q> | undefined {
@@ -181,6 +293,13 @@ export class World implements WorldView {
     return result as QueryResult<Q>;
   }
 
+  /**
+   * Finds all entities which satisfy a given query, returning them as a `QueryResults`
+   * iterator. The `QueryResults` provides additional methods for further filtering or
+   * transformation of the returned entities.
+   *
+   * @throws {UnknownComponentError} if any component queried is not registered.
+   */
   find<Q extends Query>(...query: Q): QueryResults<Q> {
     const world = this; // eslint-disable-line @typescript-eslint/no-this-alias
 
@@ -193,6 +312,10 @@ export class World implements WorldView {
     });
   }
 
+  /**
+   * Constructs a `QueryResults` iterator pre-seeded with a specific list
+   * of entities.
+   */
   with(entities: Entity[]): QueryResults<[typeof ENTITY]> {
     return new QueryResults(this, function* () {
       for (const entity of entities) {
@@ -201,6 +324,15 @@ export class World implements WorldView {
     });
   }
 
+  /**
+   * Takes a snapshot of this world as a JSON-serializable object.
+   *
+   * The snapshot contains all resources and components as serialized by the
+   * resource or component class's static `dehydrate` method.
+   *
+   * Resources or components without a `dehydrate` method defined, or for which
+   * the `dehydrate` method returns `undefined` are excluded from the snapshot.
+   */
   snapshot(): WorldSnapshot {
     const snapshot: WorldSnapshot = {
       resources: {},
@@ -232,6 +364,24 @@ export class World implements WorldView {
     return snapshot;
   }
 
+  /**
+   * Restores a previously created snapshot into this world.
+   *
+   * The resources contained within the snapshot are rehydrated according to the
+   * `rehydrate` methods of the registered resource classes by the same names.
+   * Resource classes without a `rehydrate` method or for which the `rehydrate` method
+   * returns `undefined` are skipped. The restored resource are merged with the other
+   * resources that already exist in this world.
+   *
+   * The entities and components contained within the snapshot are rehydrated according
+   * to the `rehydrate` methods of the registered component classes by the same names.
+   * Component classes without a `rehydrate` method or for which the `rehydrate` method
+   * returns `undefined` are skipped. Any entities existing in the world prior to
+   * restoring are removed before the snapshot is restored.
+   *
+   * @throws {UnknownResourceError} if a named resource in the snapshot is not registered
+   * @throws {UnknownComponentError} if a named component in the snapshot is not registered
+   */
   restore(snapshot: WorldSnapshot) {
     // HACK: This is a very scary function... we might have to do
     // something more explicit down the line...

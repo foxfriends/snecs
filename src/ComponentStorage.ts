@@ -21,6 +21,10 @@ export class ComponentStorage<T> {
     return this.#storage.has(entity);
   }
 
+  clear() {
+    this.#storage.clear();
+  }
+
   *[Symbol.iterator](): Iterator<[Entity, T]> {
     yield* this.#storage[Symbol.iterator]();
   }
