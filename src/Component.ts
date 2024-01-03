@@ -1,5 +1,3 @@
-import type { Entity } from "./Entity.js";
-
 export interface ComponentClass extends Function {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any): any;
