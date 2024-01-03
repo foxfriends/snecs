@@ -1,23 +1,19 @@
-import {
-  type Component,
-  type ComponentConstructor,
-  ComponentStorage,
-  ComponentClass,
-} from "./Component.js";
+import { type Component, type ComponentConstructor, ComponentClass } from "./Component.js";
+import { ComponentStorage } from "./ComponentStorage.js";
 import type { Entity } from "./Entity.js";
 import {
   ENTITY,
   ENTITY_BUILDER,
-  InfallibleQuery,
-  Query,
-  QueryElement,
-  QueryResult,
+  type InfallibleQuery,
+  type Query,
+  type QueryElement,
+  type QueryResult,
 } from "./Query.js";
 import type { System } from "./System.js";
 import type { Resource, ResourceClass, ResourceConstructor } from "./Resource.js";
+import type { WorldView } from "./WorldView.js";
 import { EntityBuilder } from "./EntityBuilder.js";
 import { QueryResults } from "./QueryResults.js";
-import type { WorldView } from "./WorldView.js";
 
 export class UnknownComponentError extends Error {}
 
@@ -218,20 +214,19 @@ export class World implements WorldView {
     }
 
     for (const [componentClass, storage] of this.#components) {
-      if (componentClass.skipSerialization) continue;
-      const dehydrate = componentClass.dehydrate ?? ((x: unknown) => x);
-
       for (const [entity, component] of storage) {
+        const dehydrated = componentClass.dehydrate?.(component);
+        if (!dehydrated) continue;
         const components = snapshot.entities[entity] ?? {};
-        components[componentClass.name] = structuredClone(dehydrate(component));
+        components[componentClass.name] = structuredClone(dehydrated);
         snapshot.entities[entity] = components;
       }
     }
 
     for (const [resourceClass, resource] of this.#resources) {
-      if (!resourceClass.serialize) continue;
-      const dehydrate = resourceClass.dehydrate ?? ((x: unknown) => x);
-      snapshot.resources[resourceClass.name] = structuredClone(dehydrate(resource));
+      const dehydrated = resourceClass.dehydrate?.(resource);
+      if (!dehydrated) continue;
+      snapshot.resources[resourceClass.name] = structuredClone(dehydrated);
     }
 
     return snapshot;
@@ -241,7 +236,10 @@ export class World implements WorldView {
     // HACK: This is a very scary function... we might have to do
     // something more explicit down the line...
 
-    // Restore the resources. NOTE: they didn't get reset first.
+    // Restore the resources.
+    //
+    // NOTE: they don't get reset first. Restored resources are merged with
+    // existing ones.
     for (const [resourceName, resource] of Object.entries(snapshot.resources)) {
       const resourceClass = [...this.#resources.keys()].find(
         (resourceClass) => resourceClass.name === resourceName,
@@ -249,14 +247,15 @@ export class World implements WorldView {
       if (!resourceClass) {
         throw new UnknownResourceError(`Resource ${resourceName} not known`);
       }
-      const rehydrated = resourceClass.rehydrate
-        ? resourceClass.rehydrate(resource)
-        : (Object.assign(Object.create(resourceClass.prototype as object), resource) as Resource);
+      const rehydrated = resourceClass.rehydrate?.(resource, resourceClass);
       if (!rehydrated) continue;
       this.#resources.set(resourceClass, rehydrated);
     }
 
     // Reset the components/entities.
+    //
+    // The components do get reset when loaded from snapshot, as the component IDs
+    // would otherwise conflict with existing entities.
     this.#entities = [];
     for (const key of this.#components.keys()) {
       this.#components.set(key, new ComponentStorage());
@@ -273,13 +272,7 @@ export class World implements WorldView {
         if (!componentClass) {
           throw new UnknownComponentError(`Component ${componentName} not registered`);
         }
-
-        const rehydrated = componentClass.rehydrate
-          ? componentClass.rehydrate(component)
-          : (Object.assign(
-              Object.create(componentClass.prototype as object),
-              component,
-            ) as Component);
+        const rehydrated = componentClass.rehydrate?.(component, componentClass);
         if (!rehydrated) continue;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.#components.get(rehydrated.constructor as ComponentClass)!.set(entity, rehydrated);

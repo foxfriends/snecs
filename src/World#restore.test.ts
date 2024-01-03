@@ -1,13 +1,16 @@
 import test from "ava";
 import { World } from "./World.js";
 import { ENTITY, OPTIONAL } from "./Query.js";
-import { ComponentConstructor } from "./Component.js";
+import { ComponentConstructor, JsonSerializableComponent } from "./Component.js";
+import { JsonSerializableResource } from "./Resource.js";
 
-class A {
-  constructor(public a = 5) {}
+class A extends JsonSerializableComponent {
+  constructor(public a = 5) {
+    super();
+  }
 }
-class B {}
-class C {}
+class B extends JsonSerializableComponent {}
+class C extends JsonSerializableComponent {}
 
 function make(components: ComponentConstructor<unknown>[] = [A, B, C]) {
   return components.reduce((w, c) => w.registerComponent(c), new World());
@@ -40,9 +43,10 @@ test("throws away any existing entities", (t) => {
 });
 
 test("revives all resources with their values", (t) => {
-  class Resource {
-    static readonly serializable = true;
-    constructor(public state = 5) {}
+  class Resource extends JsonSerializableResource {
+    constructor(public state = 5) {
+      super();
+    }
   }
 
   const world = make().setResource(new Resource());
@@ -67,14 +71,16 @@ test("correctly handles skipped entity IDs", (t) => {
   t.deepEqual([...world.find(ENTITY)], [[1], [4]]);
 });
 
-class SpecialComponent {
+class SpecialComponent extends JsonSerializableComponent {
   static rehydrate(data: unknown) {
     if (data && typeof data === "object" && "a" in data && typeof data.a === "number") {
       return new SpecialComponent(data.a);
     }
   }
 
-  constructor(public b: number) {}
+  constructor(public b: number) {
+    super();
+  }
 }
 
 test("restores components with specialized rehydrate functions", (t) => {
@@ -99,16 +105,16 @@ test("skips components rejected by the rehydrator", (t) => {
   t.deepEqual([...world.find(ENTITY, OPTIONAL(SpecialComponent))], [[1, undefined]]);
 });
 
-class SpecialResource {
-  static readonly serialize = true;
-
-  static rehydrate(data: unknown) {
+class SpecialResource extends JsonSerializableResource {
+  static rehydrate(data: unknown): SpecialResource | undefined {
     if (data && typeof data === "object" && "a" in data && typeof data.a === "number") {
       return new SpecialResource(data.a);
     }
   }
 
-  constructor(public b: number) {}
+  constructor(public b: number) {
+    super();
+  }
 }
 
 test("restores resources with specialized rehydrate functions", (t) => {

@@ -1,10 +1,11 @@
 import test from "ava";
 import { World } from "./World.js";
-import { ComponentConstructor } from "./Component.js";
+import { ComponentConstructor, JsonSerializableComponent } from "./Component.js";
+import { JsonSerializableResource } from "./Resource.js";
 
-class A {}
-class B {}
-class C {}
+class A extends JsonSerializableComponent {}
+class B extends JsonSerializableComponent {}
+class C extends JsonSerializableComponent {}
 
 function make(components: ComponentConstructor<unknown>[] = [A, B, C]) {
   return components.reduce((w, c) => w.registerComponent(c), new World());
@@ -26,9 +27,7 @@ test("includes all the entities", (t) => {
 });
 
 test("includes all the serializable resources", (t) => {
-  class Serializable {
-    static readonly serialize = true;
-  }
+  class Serializable extends JsonSerializableResource {}
 
   const world = make().setResource(new Serializable());
   t.deepEqual(world.snapshot(), {
@@ -40,8 +39,7 @@ test("includes all the serializable resources", (t) => {
 });
 
 test("serializes resources according to their defined dehydrate function", (t) => {
-  class Serializable {
-    static readonly serialize = true;
+  class Serializable extends JsonSerializableResource {
     static dehydrate(data: Serializable) {
       return { ok: true, data };
     }
@@ -57,11 +55,9 @@ test("serializes resources according to their defined dehydrate function", (t) =
 });
 
 test("skips non-serializable resources", (t) => {
-  class Serializable {
-    static readonly serialize = false;
-  }
+  class NonSerializable {}
 
-  const world = make().setResource(new Serializable());
+  const world = make().setResource(new NonSerializable());
   t.deepEqual(world.snapshot(), {
     resources: {},
     entities: {},
@@ -69,9 +65,7 @@ test("skips non-serializable resources", (t) => {
 });
 
 test("skips non-serializable components", (t) => {
-  class NonSerializable {
-    static readonly skipSerialization = true;
-  }
+  class NonSerializable {}
 
   const world = make().registerComponent(NonSerializable);
   world.buildEntity().addComponent(new NonSerializable()).addComponent(new A());
@@ -84,7 +78,7 @@ test("skips non-serializable components", (t) => {
 });
 
 test("serializes components according to their defined dehydrate function", (t) => {
-  class Serializable {
+  class Serializable extends JsonSerializableComponent {
     static dehydrate(component: Serializable) {
       return { ok: true, component };
     }

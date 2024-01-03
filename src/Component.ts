@@ -3,9 +3,8 @@ import type { Entity } from "./Entity.js";
 export interface ComponentClass extends Function {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any): any;
-  readonly skipSerialization?: true;
-  rehydrate?(this: void, data: unknown): Component | undefined;
-  dehydrate?(this: void, data: InstanceType<this>): unknown;
+  rehydrate?(this: void, data: unknown, componentClass: ComponentClass): Component | undefined;
+  dehydrate?(this: void, data: InstanceType<this>): unknown | undefined;
 }
 
 export interface Component {
@@ -18,28 +17,12 @@ export interface ComponentConstructor<C> {
   new (...args: any): C;
 }
 
-export class ComponentStorage<T> {
-  #storage: Map<Entity, T> = new Map();
-
-  get(entity: Entity): T | undefined {
-    return this.#storage.get(entity);
+export class JsonSerializableComponent {
+  static rehydrate(data: unknown, componentClass: ComponentClass): Component | undefined {
+    return Object.assign(Object.create(componentClass.prototype as object), data) as Component;
   }
 
-  set(entity: Entity, component: T) {
-    this.#storage.set(entity, component);
-    return this;
-  }
-
-  delete(entity: Entity) {
-    this.#storage.delete(entity);
-    return this;
-  }
-
-  has(entity: Entity): boolean {
-    return this.#storage.has(entity);
-  }
-
-  *[Symbol.iterator](): Iterator<[Entity, T]> {
-    yield* this.#storage[Symbol.iterator]();
+  static dehydrate(data: unknown): unknown {
+    return data;
   }
 }
