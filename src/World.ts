@@ -171,11 +171,11 @@ export class World implements WorldView {
    *
    * @throws {UnknownComponentError} if the component type is not registered
    */
-  clearComponent<T extends Component>(component: T) {
-    const storage = this.#components.get(component.constructor as ComponentClass);
+  clearComponent<T>(component: ComponentConstructor<T>) {
+    const storage = this.#components.get(component);
     if (!storage) {
       throw new UnknownComponentError(
-        `Attempted to clear non-registered component ${component.constructor.name}`,
+        `Attempted to clear non-registered component ${component.name}`,
       );
     }
     storage.clear();
