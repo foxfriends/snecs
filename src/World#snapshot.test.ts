@@ -38,6 +38,27 @@ test("includes all the serializable resources", (t) => {
   });
 });
 
+test("passes the provided purpose to the dehydrate functions", (t) => {
+  t.plan(2);
+
+  class Resource extends JsonSerializableResource {
+    static dehydrate(data: Resource, purpose: unknown) {
+      t.is(purpose, "the purpose");
+    }
+  }
+
+  class Component extends JsonSerializableComponent {
+    static dehydrate(data: Component, purpose: unknown) {
+      t.is(purpose, "the purpose");
+    }
+  }
+
+  const world = make().registerComponent(Component);
+  world.buildEntity().addComponent(new Component());
+  world.setResource(new Resource());
+  world.snapshot("the purpose");
+});
+
 test("serializes resources according to their defined dehydrate function", (t) => {
   class Serializable extends JsonSerializableResource {
     static dehydrate(data: Serializable) {

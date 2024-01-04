@@ -333,7 +333,7 @@ export class World implements WorldView {
    * Resources or components without a `dehydrate` method defined, or for which
    * the `dehydrate` method returns `undefined` are excluded from the snapshot.
    */
-  snapshot(): WorldSnapshot {
+  snapshot(purpose?: unknown): WorldSnapshot {
     const snapshot: WorldSnapshot = {
       resources: {},
       entities: {},
@@ -347,7 +347,7 @@ export class World implements WorldView {
 
     for (const [componentClass, storage] of this.#components) {
       for (const [entity, component] of storage) {
-        const dehydrated = componentClass.dehydrate?.(component);
+        const dehydrated = componentClass.dehydrate?.(component, purpose);
         if (!dehydrated) continue;
         const components = snapshot.entities[entity] ?? {};
         components[componentClass.name] = structuredClone(dehydrated);
@@ -356,7 +356,7 @@ export class World implements WorldView {
     }
 
     for (const [resourceClass, resource] of this.#resources) {
-      const dehydrated = resourceClass.dehydrate?.(resource);
+      const dehydrated = resourceClass.dehydrate?.(resource, purpose);
       if (!dehydrated) continue;
       snapshot.resources[resourceClass.name] = structuredClone(dehydrated);
     }

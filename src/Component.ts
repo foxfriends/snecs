@@ -2,7 +2,7 @@ export interface ComponentClass extends Function {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any): any;
   rehydrate?(this: void, data: unknown, componentClass: ComponentClass): Component | undefined;
-  dehydrate?(this: void, data: InstanceType<this>): unknown | undefined;
+  dehydrate?(this: void, data: InstanceType<this>, purpose?: unknown): unknown | undefined;
 }
 
 export interface Component {
@@ -20,7 +20,7 @@ export class JsonSerializableComponent {
     return Object.assign(Object.create(componentClass.prototype as object), data) as Component;
   }
 
-  static dehydrate(data: unknown): unknown {
+  static dehydrate(data: unknown, purpose?: unknown): unknown {
     return data;
   }
 }

@@ -2,7 +2,7 @@ export interface ResourceClass extends Function {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any): any;
   rehydrate?(this: void, data: unknown, resourceClass: ResourceClass): Resource | undefined;
-  dehydrate?(this: void, data: InstanceType<this>): unknown | undefined;
+  dehydrate?(this: void, data: InstanceType<this>, purpose?: unknown): unknown | undefined;
 }
 
 export interface Resource {
@@ -20,7 +20,7 @@ export class JsonSerializableResource {
     return Object.assign(Object.create(resourceClass.prototype as object), data) as Resource;
   }
 
-  static dehydrate(data: unknown): unknown {
+  static dehydrate(data: unknown, purpose?: unknown): unknown {
     return data;
   }
 }
