@@ -20,7 +20,7 @@ export class JsonSerializableComponent {
     return Object.assign(Object.create(componentClass.prototype as object), data) as Component;
   }
 
-  static dehydrate(data: unknown, purpose?: unknown): unknown {
+  static dehydrate(data: unknown, _purpose?: unknown): unknown {
     return data;
   }
 }
