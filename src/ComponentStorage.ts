@@ -1,5 +1,8 @@
 import type { Entity } from "./Entity.js";
 
+/**
+ * Provides a backing storage for component instances.
+ */
 export class ComponentStorage<T> {
   #storage: Map<Entity, T> = new Map();
 

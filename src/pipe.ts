@@ -21,11 +21,22 @@ export class PipedSystem<A, B> extends MiddlewareSystem<A, B> {
     super();
   }
 
+  /**
+   * Runs this composed system on the world.
+   */
   run(world: WorldView) {
     // This function should only be called when A is undefined, so...
     this.runAsMiddleware(world, () => {}, undefined as A);
   }
 
+  /**
+   * Runs this composed system as a middleware. A middleware receives some context,
+   * passed from the previous middleware, and may trigger the next middleware by
+   * calling the `next` function with some new context.
+   *
+   * The first middleware in a chain receives no context. The last middleware in
+   * a chain should not call `next`.
+   */
   runAsMiddleware(world: WorldView, next: Next<B>, context: A) {
     const start = Array.from(this.chain)
       .reverse()
@@ -49,12 +60,21 @@ export class PipedSystem<A, B> extends MiddlewareSystem<A, B> {
     start(context);
   }
 
+  /**
+   * Sets the display name of this system, used in some debug representations.
+   */
   displayAs(name: string) {
     this.displayName = name;
     return this;
   }
 }
 
+/**
+ * Composes multiple middlewares-style systems into a single system, where each middleware
+ * may optionally trigger the rest of the chain any number of times, on some input parameters.
+ *
+ * If you need this feature, you will know. Most of the time, you do not.
+ */
 export function pipe<A, B, C, D, E>(
   a: MiddlewareLike<A, B>,
   b: MiddlewareLike<B, C>,

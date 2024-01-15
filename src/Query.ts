@@ -6,6 +6,7 @@ import type { WorldView } from "./WorldView.js";
 export const ENTITY = Symbol("Query:ENTITY");
 export const ENTITY_BUILDER = Symbol("Query:ENTITY_BUILDER");
 
+/** Queries for entities which do not have a specified component. */
 export function NOT<C>(query: C): {
   not: true;
   query: C;
@@ -13,6 +14,11 @@ export function NOT<C>(query: C): {
   return { not: true, query };
 }
 
+/**
+ * Adapts a query such that the new query unconditionally succeeds for any
+ * entity, returning `undefined` instead of skipping the entity if the query
+ * does not succeed.
+ */
 export function OPTIONAL<C>(query: C): {
   optional: true;
   query: C;
@@ -20,6 +26,28 @@ export function OPTIONAL<C>(query: C): {
   return { optional: true, query };
 }
 
+/**
+ * Creates a "derived" query, which may encapsulate commonly used querying
+ * logic into a reusable query component.
+ *
+ * If any of the sub-queries fails, or if the combining function returns
+ * `undefined`, the derived query is considered to have failed, and the entity
+ * is skipped.
+ *
+ * # Examples
+ *
+ * This derived query queries for entities with both `Position` and `Size`
+ * components, returning them as a combined `BoundingBox`.
+ *
+ * ```js
+ * const BoundingBox = DERIVED(Position, Size)(([position, size]) => ({
+ *   minX: position.x,
+ *   minY: position.y,
+ *   maxX: position.x + size.x,
+ *   maxY: position.y + size.y,
+ * }));
+ * ```
+ */
 export function DERIVED<Q extends Query>(...query: Q) {
   return <R>(
     combiner: (query: QueryResult<Q>, world: WorldView) => R,

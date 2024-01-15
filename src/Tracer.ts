@@ -1,3 +1,6 @@
+/**
+ * Debugging facility for tracing and timing the execution of systems in a dispatcher.
+ */
 export class Tracer {
   constructor(public name: string) {
     this.start = process.hrtime.bigint();
