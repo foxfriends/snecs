@@ -333,20 +333,31 @@ export class World implements WorldView {
    * Resources or components without a `dehydrate` method defined, or for which
    * the `dehydrate` method returns `undefined` are excluded from the snapshot.
    */
-  snapshot(purpose?: unknown): WorldSnapshot {
+  snapshot(
+    purpose?: unknown,
+    filters: {
+      entities?: QueryResults<unknown>;
+      components?: Set<ComponentClass>;
+      resources?: Set<ResourceClass>;
+    } = {},
+  ): WorldSnapshot {
     const snapshot: WorldSnapshot = {
       resources: {},
       entities: {},
     };
 
-    for (const entity of this.#entities) {
-      if (entity !== undefined) {
-        snapshot.entities[entity] = {};
-      }
+    for (const entity of filters.entities
+      ?.select(ENTITY)
+      .collect()
+      .map(([e]) => e) ?? this.#entities) {
+      if (entity === undefined) continue;
+      snapshot.entities[entity] = {};
     }
 
     for (const [componentClass, storage] of this.#components) {
+      if (filters.components && !filters.components.has(componentClass)) continue;
       for (const [entity, component] of storage) {
+        if (!(entity in snapshot.entities)) continue;
         const dehydrated = componentClass.dehydrate?.(component, purpose);
         if (!dehydrated) continue;
         const components = snapshot.entities[entity] ?? {};
@@ -356,6 +367,7 @@ export class World implements WorldView {
     }
 
     for (const [resourceClass, resource] of this.#resources) {
+      if (filters.resources && !filters.resources.has(resourceClass)) continue;
       const dehydrated = resourceClass.dehydrate?.(resource, purpose);
       if (!dehydrated) continue;
       snapshot.resources[resourceClass.name] = structuredClone(dehydrated);

@@ -139,3 +139,31 @@ test("skips destroyed entities", (t) => {
     },
   });
 });
+
+test("allows specifying only specific entities, components, and resources", (t) => {
+  const world = make();
+  class First extends JsonSerializableResource {}
+  class Second extends JsonSerializableResource {}
+
+  world.buildEntity().addComponent(new A()).addComponent(new B());
+  world.buildEntity().addComponent(new B()).addComponent(new C());
+  world.buildEntity().addComponent(new C()).addComponent(new A());
+  world.setResource(new First());
+  world.setResource(new Second());
+  t.deepEqual(
+    world.snapshot(undefined, {
+      entities: world.find(A),
+      components: new Set([A, C]),
+      resources: new Set([First]),
+    }),
+    {
+      resources: {
+        First: {},
+      },
+      entities: {
+        1: { A: {} },
+        3: { C: {}, A: {} },
+      },
+    },
+  );
+});
